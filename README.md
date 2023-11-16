@@ -26,7 +26,7 @@ This project is part of an educational assignment focused on building a simulate
 Detailed instructions for setting up and running the project will be provided separately.
 
 ### Contribution
-This project is developed collaboratively by [Student Name 1] and [Student Name 2]. It is part of an academic assignment and is not intended for commercial use.
+This project is developed collaboratively by Gonçalo Ferreira and Rafael Ferreira. It is part of an academic assignment and is not intended for commercial use.
 
 ### License
 This project is licensed under the [MIT License](LICENSE).

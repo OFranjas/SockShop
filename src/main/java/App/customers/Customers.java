@@ -100,10 +100,14 @@ public class Customers {
      * @param saleData The JSON string representing the sale data to be sent.
      */
     private void sendSaleData(final String saleData) {
-        ProducerRecord<String, String> saleRecord = new ProducerRecord<>(salesTopicName, saleData);
+        JSONObject saleJson = new JSONObject(saleData);
+        String sockIdKey = saleJson.getString("sockId"); // Extract sockId from the sale data
+
+        ProducerRecord<String, String> saleRecord = new ProducerRecord<>(salesTopicName, sockIdKey, saleData);
         producer.send(saleRecord, new Callback() {
             @Override
             public void onCompletion(RecordMetadata metadata, Exception exception) {
+                // Logging logic
                 if (exception != null) {
                     logger.error("Error sending message: {}", exception.getMessage());
                 } else {
@@ -121,7 +125,7 @@ public class Customers {
      */
     private String generateSaleData(JSONObject sockInfo) {
         JSONObject sale = new JSONObject();
-        sale.put("sockReference", sockInfo.getString("sockId"));
+        sale.put("sockId", sockInfo.getString("sockId"));
         sale.put("pricePerPair", sockInfo.getDouble("price"));
         sale.put("numPairs", 1 + random.nextInt(5)); // Random number of pairs
         sale.put("supplierId", sockInfo.getString("supplierId"));

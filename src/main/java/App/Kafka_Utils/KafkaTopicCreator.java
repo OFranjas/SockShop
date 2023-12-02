@@ -38,6 +38,17 @@ public class KafkaTopicCreator {
         }
     }
 
+    // Delete a Kafka topic
+    public void deleteTopic(String topicName) {
+        try {
+            adminClient.deleteTopics(Arrays.asList(topicName)).all().get();
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Handle other errors during topic deletion
+        }
+    }
+
+
     public void close() {
         // Close the AdminClient when done
         adminClient.close();

@@ -1,7 +1,8 @@
 package App.kafka_streams;
 
-import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.kstream.KStream;
 
 public interface KafkaStreamProcessor {
-    void process(StreamsBuilder builder);
+    void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream);
+
 }

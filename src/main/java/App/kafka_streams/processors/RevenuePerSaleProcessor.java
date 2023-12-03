@@ -2,7 +2,6 @@ package App.kafka_streams.processors;
 
 import App.kafka_streams.KafkaStreamProcessor;
 
-import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.ForeachAction;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.ValueMapper;
@@ -26,9 +25,7 @@ public class RevenuePerSaleProcessor implements KafkaStreamProcessor {
      * @param builder The StreamsBuilder for building Kafka Streams applications.
      */
     @Override
-    public void process(StreamsBuilder builder) {
-        // Create a stream from the sales_topic
-        KStream<String, String> salesStream = builder.stream("sales_topic");
+    public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
 
         // Map each sale record to calculate revenue
         KStream<String, String> revenuePerSaleStream = salesStream.mapValues(new ValueMapper<String, String>() {
@@ -54,7 +51,7 @@ public class RevenuePerSaleProcessor implements KafkaStreamProcessor {
             @Override
             public void apply(String key, String value) {
                 // Log the calculated revenue with a custom message format
-                logger.info("✅ REQ 5 -> Calculated Revenue: {}", value);
+                logger.info("✅ REQ 5 -> Calculated Revenue for sale (Sale ID: {}): {}", key, value);
             }
         });
 

@@ -51,19 +51,21 @@ public class DBInfoDataGenerator {
         try {
             while (true) {
                 // Generate and send sock data
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 2; i++) {
                     JSONObject sockData = generateSockData();
                     sendMockData(sockData.toString());
                 }
 
                 // Generate and send supplier data
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 2; i++) {
                     JSONObject supplierData = generateSupplierData();
                     sendMockData(supplierData.toString());
                 }
 
                 // Wait for 5 seconds before sending the next batch of data
                 Thread.sleep(5000);
+
+                return;
             }
         } catch (InterruptedException e) {
             logger.error("Data generation interrupted", e);

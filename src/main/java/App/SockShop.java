@@ -20,21 +20,17 @@ public class SockShop {
             Properties kafkaProps = new Properties();
             kafkaProps.put("bootstrap.servers", "localhost:9092"); // Kafka Broker
 
-            // Initialize Kafka topics
+            // Delete Kafka topics if they already exist
             KafkaTopicCreator topicCreator = new KafkaTopicCreator(kafkaProps);
+            topicCreator.deleteTopic("sales_topic");
+            topicCreator.deleteTopic("purchases_topic");
+            topicCreator.deleteTopic("results_topic");
+
+            // Initialize Kafka topics
             createKafkaTopics(topicCreator);
 
             // Shutdown the Kafka topics creator when done
             topicCreator.close();
-
-            // Starting the Kafka Streams application
-            Thread kafkaStreamsThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    KafkaStreamsApp.main(new String[0]);
-                }
-            });
-            kafkaStreamsThread.start();
 
             // Starting the DBInfo Data Generator application
             Thread dbInfoDataGeneratorThread = new Thread(new Runnable() {
@@ -45,6 +41,9 @@ public class SockShop {
             });
             dbInfoDataGeneratorThread.start();
 
+            // Wait for the DBInfo Data Generator to start
+            Thread.sleep(2000);
+
             // Starting the Customers application
             Thread customersThread = new Thread(new Runnable() {
                 @Override
@@ -53,6 +52,9 @@ public class SockShop {
                 }
             });
             customersThread.start();
+
+            // Wait for the Customers application to start
+            Thread.sleep(2000);
 
             // Starting the Purchases application
             Thread purchasesThread = new Thread(new Runnable() {
@@ -63,13 +65,26 @@ public class SockShop {
             });
             purchasesThread.start();
 
+            // Wait for the Purchases application to start
+            Thread.sleep(2000);
+
+            // Starting the Kafka Streams application
+            Thread kafkaStreamsThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    KafkaStreamsApp.main(new String[0]);
+                }
+            });
+            kafkaStreamsThread.start();
+
+            Thread.sleep(2000);
+
             // Wait for threads completion
             kafkaStreamsThread.join();
             dbInfoDataGeneratorThread.join();
             customersThread.join();
             purchasesThread.join();
         } catch (InterruptedException e) {
-
 
             Properties kafkaProps = new Properties();
             kafkaProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
@@ -82,10 +97,10 @@ public class SockShop {
             topicCreator.deleteTopic("DBInfo_topic");
             topicCreator.close();
 
+            System.out.println("Fim da execução");
+
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            System.out.println("Fim da execução");
         }
 
     }
@@ -98,6 +113,7 @@ public class SockShop {
         createTopic(topicCreator, "DBInfo_topic", 1, (short) 1);
         ;
     }
+
 
     private static void createTopic(KafkaTopicCreator topicCreator, String topicName, int numPartitions,
             short replicationFactor) {

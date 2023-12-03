@@ -3,32 +3,31 @@ package App.customers;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.json.JSONObject;
+
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Random;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.time.Duration;
 
-/**
- * The Customers class simulates customer behaviors by generating and sending
- * sales data to a Kafka topic.
- */
 public class Customers {
 
     private KafkaProducer<String, String> producer;
     private KafkaConsumer<String, String> consumer;
-    private String salesTopicName = "sales_topic";
-    private String dbInfoTopicName = "DBInfo_topic";
-    private Random random = new Random();
+    private final String salesTopicName = "sales_topic";
+    private final String dbInfoTopicName = "DBInfo_topic";
+    private final Random random = new Random();
     private static final Logger logger = LoggerFactory.getLogger(Customers.class);
 
     public static void main(String[] args) {
@@ -36,26 +35,25 @@ public class Customers {
         Customers customerApp = new Customers();
         customerApp.initializeProducer();
         customerApp.initializeConsumer();
+
+        // Add a shutdown hook to handle graceful shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Shutdown request, closing Kafka producer and consumer");
+            customerApp.consumer.wakeup();
+        }));
+
         customerApp.simulateCustomerBehavior();
-        customerApp.closeProducer();
-        customerApp.closeConsumer();
     }
 
-    /**
-     * Initializes the Kafka producer with necessary configurations.
-     */
     private void initializeProducer() {
         Properties producerProps = new Properties();
-        producerProps.put("bootstrap.servers", "localhost:9092");
-        producerProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producer = new KafkaProducer<>(producerProps);
         logger.info("Kafka producer initialized");
     }
 
-    /**
-     * Initializes the Kafka consumer to read data from the DBInfo topic.
-     */
     private void initializeConsumer() {
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
@@ -68,82 +66,57 @@ public class Customers {
         logger.info("Kafka consumer initialized and subscribed to {}", dbInfoTopicName);
     }
 
-    /**
-     * Continuously simulates customer behavior by consuming data from the DBInfo
-     * topic.
-     */
     private void simulateCustomerBehavior() {
         try {
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
-                for (ConsumerRecord<String, String> record : records) {
+                records.forEach(record -> {
                     JSONObject dbInfoData = new JSONObject(record.value());
-                    if (dbInfoData.has("sockId")) { // Simple check to filter sock data
-                        final String saleData = generateSaleData(dbInfoData);
-                        sendSaleData(saleData);
+                    if (dbInfoData.has("sockId")) {
+                        sendSaleData(generateSaleData(dbInfoData));
                     }
-                }
+                });
             }
         } catch (WakeupException e) {
             logger.info("Consumer closing - WakeupException");
         } catch (Exception e) {
             logger.error("Unexpected error", e);
         } finally {
-            consumer.close();
+            closeConsumer();
+            closeProducer();
             logger.info("Kafka consumer closed");
         }
     }
 
-    /**
-     * Sends sale data to the Kafka topic.
-     * 
-     * @param saleData The JSON string representing the sale data to be sent.
-     */
     private void sendSaleData(final String saleData) {
         JSONObject saleJson = new JSONObject(saleData);
-        String sockIdKey = saleJson.getString("sockId"); // Extract sockId from the sale data
+        String sockIdKey = saleJson.getString("sockId");
 
         ProducerRecord<String, String> saleRecord = new ProducerRecord<>(salesTopicName, sockIdKey, saleData);
-        producer.send(saleRecord, new Callback() {
-            @Override
-            public void onCompletion(RecordMetadata metadata, Exception exception) {
-                // Logging logic
-                if (exception != null) {
-                    logger.error("Error sending message: {}", exception.getMessage());
-                } else {
-                    logger.info("Sent message: {}", saleData);
-                }
+        producer.send(saleRecord, (RecordMetadata metadata, Exception exception) -> {
+            if (exception != null) {
+                logger.error("Error sending message: {}", exception.getMessage());
+            } else {
+                logger.info("Sent message: {}", saleData);
             }
         });
     }
 
-    /**
-     * Generates sale data based on the sock information consumed from DBInfo topic.
-     * 
-     * @param sockInfo JSONObject containing sock data.
-     * @return A JSON string representing a sale.
-     */
     private String generateSaleData(JSONObject sockInfo) {
         JSONObject sale = new JSONObject();
         sale.put("sockId", sockInfo.getString("sockId"));
         sale.put("pricePerPair", sockInfo.getDouble("price"));
-        sale.put("numPairs", 1 + random.nextInt(5)); // Random number of pairs
+        sale.put("numPairs", 1 + random.nextInt(5));
         sale.put("supplierId", sockInfo.getString("supplierId"));
         sale.put("buyerId", "buyer" + random.nextInt(100));
         return sale.toString();
     }
 
-    /**
-     * Closes the Kafka producer to release resources.
-     */
     private void closeProducer() {
         producer.close();
         logger.info("Kafka producer closed");
     }
 
-    /**
-     * Closes the Kafka consumer to release resources.
-     */
     private void closeConsumer() {
         consumer.close();
         logger.info("Kafka consumer closed");

@@ -48,7 +48,7 @@ public class ExpensesPerSaleProcessor implements KafkaStreamProcessor {
             @Override
             public void apply(String key, String value) {
                 // Log the calculated expense with a custom message format
-                logger.info("✅ REQ 6 -> Calculated Expense for sale (Sale ID: {}): {}", key, value);
+                logger.info("✅ REQ 6 -> Calculated Expense for purchase (Purchase ID: {}): {}", key, value);
             }
         });
 

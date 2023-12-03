@@ -27,6 +27,8 @@ public class KafkaTopicCreator {
         NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
         try {
             adminClient.createTopics(Arrays.asList(newTopic)).all().get();
+
+            logger.info("Topic '" + topicName + "' created.");
         } catch (Exception e) {
             if (e.getCause() instanceof TopicExistsException) {
                 // Topic already exists, no action needed
@@ -42,6 +44,8 @@ public class KafkaTopicCreator {
     public void deleteTopic(String topicName) {
         try {
             adminClient.deleteTopics(Arrays.asList(topicName)).all().get();
+
+            logger.info("Topic '" + topicName + "' deleted.");
         } catch (Exception e) {
             e.printStackTrace();
             // Handle other errors during topic deletion

@@ -110,6 +110,7 @@ public class Purchases {
         purchase.put("purchasePrice", sockInfo.getDouble("price"));
         purchase.put("quantity", 1 + random.nextInt(5));
         purchase.put("supplierId", sockInfo.getString("supplierId"));
+        purchase.put("type", sockInfo.getString("type"));
         return purchase.toString();
     }
 

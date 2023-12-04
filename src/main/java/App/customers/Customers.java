@@ -109,6 +109,7 @@ public class Customers {
         sale.put("numPairs", 1 + random.nextInt(5));
         sale.put("supplierId", sockInfo.getString("supplierId"));
         sale.put("buyerId", "buyer" + random.nextInt(100));
+        sale.put("type", sockInfo.getString("type"));
         return sale.toString();
     }
 

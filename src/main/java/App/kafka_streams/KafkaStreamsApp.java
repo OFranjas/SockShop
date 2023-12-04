@@ -53,6 +53,12 @@ public class KafkaStreamsApp {
         KafkaStreamProcessor totalProfitProcessor = new TotalProfitProcessor();
         totalProfitProcessor.process(salesStream, purchasesStream);
 
+        // * REQ 11 -> Average spent per purchase type processor
+
+        // * REQ 12 -> Average amount spent per purchase processor
+        KafkaStreamProcessor averageSpentPerPurchaseProcessor = new AverageSpentPerPurchaseProcessor();
+        averageSpentPerPurchaseProcessor.process(salesStream, purchasesStream);
+
         // Build and start the Kafka Streams application
         final KafkaStreams streams = new KafkaStreams(builder.build(), props);
         streams.cleanUp();

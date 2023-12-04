@@ -16,32 +16,32 @@ public class ProfitPerSaleProcessor implements KafkaStreamProcessor {
 
     @Override
     public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
-
         // Create a KTable from the purchases stream
         KTable<String, String> expensesTable = purchasesStream.toTable();
 
-        // Join the sales stream with the expenses KTable by a common key (e.g., sale ID)
+        // Join the sales stream with the expenses KTable
         KStream<String, String> profitPerSaleStream = salesStream.join(
-            expensesTable,
-            (saleValue, expenseValue) -> {
-                // Parse sale and expense records to JSON
-                JSONObject sale = new JSONObject(saleValue);
-                JSONObject expense = new JSONObject(expenseValue);
+                expensesTable,
+                (saleValue, expenseValue) -> calculateProfit(saleValue, expenseValue));
 
-                // Calculate profit per sale
-                double revenue = sale.getDouble("pricePerPair") * sale.getInt("numPairs");
-                double expenseAmount = expense.getDouble("purchasePrice") * expense.getInt("quantity");
-                double profit = revenue - expenseAmount;
+        // Log and send the result
+        profitPerSaleStream.peek(
+                (key, value) -> logger.info("✅ REQ 7 -> Calculated Profit for Sale (Sale ID: {}): {}", key, value))
+                .to("results_topic");
+    }
 
-                // Return the calculated profit as a string
-                return String.valueOf(profit);
-            }
-        );
+    private String calculateProfit(String saleValue, String expenseValue) {
+        // Fallback logic if the expenseValue is null
+        if (expenseValue == null) {
+            logger.warn("Missing Expense data for Sale: {}", saleValue);
+            return "0"; // or some other default/fallback logic
+        }
 
-        // Log each calculated profit
-        profitPerSaleStream.foreach((key, value) -> logger.info("✅ REQ 7 -> Calculated Profit for Sale (Sale ID: {}): {}", key, value));
+        JSONObject sale = new JSONObject(saleValue);
+        JSONObject expense = new JSONObject(expenseValue);
 
-        // Send the calculated profit to the results_topic
-        profitPerSaleStream.to("results_topic");
+        double revenue = sale.getDouble("pricePerPair") * sale.getInt("numPairs");
+        double expenseAmount = expense.getDouble("purchasePrice") * expense.getInt("quantity");
+        return String.valueOf(revenue - expenseAmount);
     }
 }

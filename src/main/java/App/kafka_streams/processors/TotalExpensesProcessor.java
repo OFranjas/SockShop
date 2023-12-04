@@ -6,7 +6,6 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.ValueMapper;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +17,9 @@ public class TotalExpensesProcessor implements KafkaStreamProcessor {
     @Override
     public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
         // Convert purchase data to expense values
-        KStream<String, Double> expensesStream = purchasesStream.mapValues((ValueMapper<String, Double>) value -> {
+        KStream<String, Double> expensesStream = purchasesStream.mapValues(value -> {
             JSONObject purchase = new JSONObject(value);
-            double purchasePrice = purchase.getDouble("purchasePrice");
-            int quantity = purchase.getInt("quantity");
-
-            return purchasePrice * quantity;
+            return purchase.getDouble("purchasePrice") * purchase.getInt("quantity");
         });
 
         // Group the expense stream by a constant key to aggregate across all records
@@ -35,11 +31,7 @@ public class TotalExpensesProcessor implements KafkaStreamProcessor {
         groupedExpenses
                 .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()))
                 .toStream()
-                .foreach((key, totalExpenses) -> logger.info("✅ REQ 9 -> Total Expenses: {}", totalExpenses));
-
-        groupedExpenses
-                .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()))
-                .toStream()
+                .peek((key, totalExpenses) -> logger.info("✅ REQ 9 -> Total Expenses: {}", totalExpenses))
                 .to("results_topic");
     }
 }

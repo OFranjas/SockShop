@@ -4,7 +4,6 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import java.util.Properties;
 
@@ -31,33 +30,35 @@ public class KafkaStreamsApp {
 
         // * REQ 5 -> revenue per sale processor
         KafkaStreamProcessor revenuePerSaleProcessor = new RevenuePerSaleProcessor();
-        revenuePerSaleProcessor.process(salesStream, null);
+        // revenuePerSaleProcessor.process(salesStream, null);
 
         // * REQ 6 -> Expenses per sale processor
         KafkaStreamProcessor expensesPerSaleProcessor = new ExpensesPerSaleProcessor();
-        expensesPerSaleProcessor.process(null, purchasesStream);
+        // expensesPerSaleProcessor.process(null, purchasesStream);
 
         // * REQ 7 -> Profit per sale processor
         KafkaStreamProcessor profitPerSaleProcessor = new ProfitPerSaleProcessor();
-        profitPerSaleProcessor.process(salesStream, purchasesStream);
+        // profitPerSaleProcessor.process(salesStream, purchasesStream);
 
         // * REQ 8 -> Total revenue processor
         KafkaStreamProcessor totalRevenueProcessor = new TotalRevenueProcessor();
-        totalRevenueProcessor.process(salesStream, null);
+        // totalRevenueProcessor.process(salesStream, null);
 
         // * REQ 9 -> Total expenses processor
         KafkaStreamProcessor totalExpensesProcessor = new TotalExpensesProcessor();
-        totalExpensesProcessor.process(null, purchasesStream);
+        // totalExpensesProcessor.process(null, purchasesStream);
 
         // * REQ 10 -> Total profit processor
         KafkaStreamProcessor totalProfitProcessor = new TotalProfitProcessor();
-        totalProfitProcessor.process(salesStream, purchasesStream);
+        // totalProfitProcessor.process(salesStream, purchasesStream);
 
         // * REQ 11 -> Average spent per purchase type processor
+        KafkaStreamProcessor averageSpentPerPurchaseByTypeProcessor = new AverageSpentPerPurchaseByTypeProcessor();
+        averageSpentPerPurchaseByTypeProcessor.process(salesStream, purchasesStream);
 
         // * REQ 12 -> Average amount spent per purchase processor
         KafkaStreamProcessor averageSpentPerPurchaseProcessor = new AverageSpentPerPurchaseProcessor();
-        averageSpentPerPurchaseProcessor.process(salesStream, purchasesStream);
+        // averageSpentPerPurchaseProcessor.process(salesStream, purchasesStream);
 
         // Build and start the Kafka Streams application
         final KafkaStreams streams = new KafkaStreams(builder.build(), props);

@@ -1,7 +1,6 @@
 package App.kafka_streams.processors;
 
 import App.kafka_streams.KafkaStreamProcessor;
-import org.apache.kafka.streams.kstream.ForeachAction;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.ValueMapper;
 import org.json.JSONObject;
@@ -19,41 +18,24 @@ public class ExpensesPerSaleProcessor implements KafkaStreamProcessor {
      * Processes the purchases data from the purchases_topic to calculate the
      * expenses per purchase.
      * 
-     * @param builder The StreamsBuilder for building Kafka Streams applications.
+     * @param salesStream The stream of sales data.
+     * @param purchasesStream The stream of purchases data.
      */
     @Override
     public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
 
         // Map each purchase record to calculate expenses
-        KStream<String, String> expensesPerSaleStream = purchasesStream.mapValues(new ValueMapper<String, String>() {
-            @Override
-            public String apply(String value) {
-                // Parse the purchase record value to JSON
-                JSONObject purchase = new JSONObject(value);
-
-                // Extract purchase price and quantity from the purchase record
-                double purchasePrice = purchase.getDouble("purchasePrice");
-                int quantity = purchase.getInt("quantity");
-
-                // Calculate the total expense for this purchase
-                double expense = purchasePrice * quantity;
-
-                // Return the calculated expense as a string
-                return String.valueOf(expense);
-            }
+        KStream<String, String> expensesPerSaleStream = purchasesStream.mapValues((ValueMapper<String, String>) value -> {
+            JSONObject purchase = new JSONObject(value);
+            double purchasePrice = purchase.getDouble("purchasePrice");
+            int quantity = purchase.getInt("quantity");
+            return String.valueOf(purchasePrice * quantity);
         });
 
         // Log each calculated expense
-        expensesPerSaleStream.foreach(new ForeachAction<String, String>() {
-            @Override
-            public void apply(String key, String value) {
-                // Log the calculated expense with a custom message format
-                logger.info("✅ REQ 6 -> Calculated Expense for purchase (Purchase ID: {}): {}", key, value);
-            }
-        });
+        expensesPerSaleStream.foreach((key, value) -> logger.info("✅ REQ 6 -> Calculated Expense for purchase (Purchase ID: {}): {}", key, value));
 
-        // Optionally, send the calculated expenses to the results_topic
+        // Send the calculated expenses to the results_topic
         expensesPerSaleStream.to("results_topic");
-
     }
 }

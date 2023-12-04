@@ -21,6 +21,8 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import App.models.Purchase;
+
 public class Purchases {
 
     private KafkaProducer<String, String> producer;
@@ -105,13 +107,16 @@ public class Purchases {
     }
 
     private String generatePurchaseData(JSONObject sockInfo) {
-        JSONObject purchase = new JSONObject();
-        purchase.put("sockId", sockInfo.getString("sockId"));
-        purchase.put("purchasePrice", sockInfo.getDouble("price"));
-        purchase.put("quantity", 1 + random.nextInt(5));
-        purchase.put("supplierId", sockInfo.getString("supplierId"));
-        purchase.put("type", sockInfo.getString("type"));
-        return purchase.toString();
+        // Create a new Purchase object
+        Purchase purchase = new Purchase();
+        purchase.setSockId(sockInfo.getString("sockId"));
+        purchase.setPurchasePrice(sockInfo.getDouble("price"));
+        purchase.setQuantity(1 + random.nextInt(5)); // Random number of pairs
+        purchase.setSupplierId(sockInfo.getString("supplierId"));
+        purchase.setType(sockInfo.getString("type")); // Assuming 'type' is also part of your sockInfo
+
+        // Serialize the Purchase object to a JSON string
+        return new JSONObject(purchase).toString();
     }
 
     private void closeProducer() {

@@ -10,6 +10,9 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import App.models.Sock;
+import App.models.Supplier;
+
 /**
  * This class simulates a data generator that sends mock data to the DBInfo
  * Kafka topic.
@@ -78,12 +81,15 @@ public class DBInfoDataGenerator {
      * @return A JSONObject representing a sock.
      */
     private JSONObject generateSockData() {
-        JSONObject sock = new JSONObject();
-        sock.put("sockId", "sock" + random.nextInt(1000));
-        sock.put("type", getRandomSockType());
-        sock.put("price", 5 + random.nextDouble() * 15); // Price between 5 and 20
-        sock.put("supplierId", "supplier" + random.nextInt(100));
-        return sock;
+        // Create a new Sock object
+        Sock sock = new Sock();
+        sock.setSockId("sock" + random.nextInt(1000));
+        sock.setType(getRandomSockType());
+        sock.setPrice(5 + random.nextDouble() * 15); // Price between 5 and 20
+        sock.setSupplierId("supplier" + random.nextInt(100));
+
+        // Serialize the Sock object to a JSON string
+        return new JSONObject(sock);
     }
 
     /**
@@ -92,11 +98,14 @@ public class DBInfoDataGenerator {
      * @return A JSONObject representing a supplier.
      */
     private JSONObject generateSupplierData() {
-        JSONObject supplier = new JSONObject();
-        supplier.put("supplierId", "supplier" + random.nextInt(100));
-        supplier.put("name", "Supplier " + random.nextInt(100));
-        supplier.put("contactInfo", "Contact " + random.nextInt(100));
-        return supplier;
+        // Create a new Supplier object
+        Supplier supplier = new Supplier();
+        supplier.setSupplierId("supplier" + random.nextInt(100));
+        supplier.setName("Supplier " + random.nextInt(100));
+        supplier.setContactInfo("Contact " + random.nextInt(100));
+
+        // Serialize the Supplier object to a JSON string
+        return new JSONObject(supplier);
     }
 
     /**

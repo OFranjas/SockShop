@@ -27,6 +27,8 @@ public class SockShop {
             topicCreator.deleteTopic("results_topic");
             topicCreator.deleteTopic("DBInfo_topic");
 
+            Thread.sleep(1000);
+
             // Initialize Kafka topics
             createKafkaTopics(topicCreator);
 

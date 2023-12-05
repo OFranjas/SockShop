@@ -1,14 +1,9 @@
 package App;
 
 import java.util.Properties;
-
-import org.apache.kafka.clients.admin.AdminClientConfig;
-
-import App.Kafka_Utils.DBInfoDataGenerator;
 import App.Kafka_Utils.KafkaTopicCreator;
-import App.customers.Customers;
-import App.kafka_streams.KafkaStreamsApp;
-import App.purchases.Purchases;
+
+import App.config.Config;
 
 public class SockShop {
 
@@ -22,10 +17,10 @@ public class SockShop {
 
             // Delete Kafka topics if they already exist
             KafkaTopicCreator topicCreator = new KafkaTopicCreator(kafkaProps);
-            topicCreator.deleteTopic("sales_topic");
-            topicCreator.deleteTopic("purchases_topic");
-            topicCreator.deleteTopic("results_topic");
-            topicCreator.deleteTopic("DBInfo_topic");
+            topicCreator.deleteTopic(Config.SALES_TOPIC_DELETE);
+            topicCreator.deleteTopic(Config.PURCHASES_TOPIC_DELETE);
+            topicCreator.deleteTopic(Config.RESULTS_TOPIC_DELETE);
+            topicCreator.deleteTopic(Config.DB_INFO_TOPIC_DELETE);
 
             Thread.sleep(1000);
 
@@ -35,7 +30,7 @@ public class SockShop {
             // Shutdown the Kafka topics creator when done
             topicCreator.close();
 
-        }  catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -43,13 +38,12 @@ public class SockShop {
 
     private static void createKafkaTopics(KafkaTopicCreator topicCreator) {
         // Create necessary Kafka topics
-        createTopic(topicCreator, "sales_topic", 1, (short) 1);
-        createTopic(topicCreator, "purchases_topic", 1, (short) 1);
-        createTopic(topicCreator, "results_topic", 1, (short) 1);
-        createTopic(topicCreator, "DBInfo_topic", 1, (short) 1);
+        createTopic(topicCreator, Config.SALES_TOPIC, 1, (short) 1);
+        createTopic(topicCreator, Config.PURCHASES_TOPIC, 1, (short) 1);
+        createTopic(topicCreator, Config.RESULTS_TOPIC, 1, (short) 1);
+        createTopic(topicCreator, Config.DB_INFO_TOPIC, 1, (short) 1);
         ;
     }
-
 
     private static void createTopic(KafkaTopicCreator topicCreator, String topicName, int numPartitions,
             short replicationFactor) {

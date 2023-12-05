@@ -17,23 +17,19 @@ public class TotalProfitProcessor implements KafkaStreamProcessor {
 
     @Override
     public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
-        // Create a KTable from the purchases stream
+        // Convert sales stream to a KTable
+        KTable<String, String> salesTable = salesStream.toTable();
+
+        // Convert purchases stream to a KTable
         KTable<String, String> expensesTable = purchasesStream.toTable();
 
-        // Join the sales stream with the expenses KTable to calculate profit for each sale
-        KStream<String, Double> profitPerSaleStream = salesStream.join(
-            expensesTable,
-            (saleValue, expenseValue) -> {
-                JSONObject sale = new JSONObject(saleValue);
-                JSONObject expense = new JSONObject(expenseValue);
+        // Join the sales and expenses tables to calculate profit for each sale
+        KTable<String, Double> profitPerSaleTable = salesTable.join(
+                expensesTable,
+                (saleValue, expenseValue) -> calculateProfit(saleValue, expenseValue));
 
-                double revenue = sale.getDouble("pricePerPair") * sale.getInt("numPairs");
-                double expenseAmount = expense.getDouble("purchasePrice") * expense.getInt("quantity");
-                return revenue - expenseAmount;
-            });
-
-        // Group the profit stream by a constant key to aggregate across all records
-        KGroupedStream<String, Double> groupedProfit = profitPerSaleStream.groupBy(
+        // Group the profit table by a constant key to aggregate across all records
+        KGroupedStream<String, Double> groupedProfit = profitPerSaleTable.toStream().groupBy(
                 (key, value) -> "total",
                 Grouped.with(Serdes.String(), Serdes.Double()));
 
@@ -43,5 +39,20 @@ public class TotalProfitProcessor implements KafkaStreamProcessor {
                 .toStream()
                 .peek((key, totalProfit) -> logger.info("✅ REQ 10 -> Total Profit: {}", totalProfit))
                 .to("results_topic");
+    }
+
+    private Double calculateProfit(String saleValue, String expenseValue) {
+        // Fallback logic if either saleValue or expenseValue is null
+        if (saleValue == null || expenseValue == null) {
+            logger.warn("Missing data for Profit Calculation");
+            return 0.0; // or some other default/fallback logic
+        }
+
+        JSONObject sale = new JSONObject(saleValue);
+        JSONObject expense = new JSONObject(expenseValue);
+
+        double revenue = sale.getDouble("pricePerPair") * sale.getInt("numPairs");
+        double expenseAmount = expense.getDouble("purchasePrice") * expense.getInt("quantity");
+        return revenue - expenseAmount;
     }
 }

@@ -19,7 +19,8 @@ public class TotalRevenueProcessor implements KafkaStreamProcessor {
         // Convert sales data to revenue values
         KStream<String, Double> revenueStream = salesStream.mapValues(value -> {
             JSONObject sale = new JSONObject(value);
-            return sale.getDouble("pricePerPair") * sale.getInt("numPairs");
+            double revenue = sale.getDouble("pricePerPair") * sale.getInt("numPairs");
+            return revenue;
         });
 
         // Group the revenue stream by a constant key to aggregate across all records

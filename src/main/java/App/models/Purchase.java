@@ -1,7 +1,7 @@
 package App.models;
 
 public class Purchase {
-    private String sockId;
+    private String sock_id;
     private Double purchasePrice;
     private Integer quantity;
     private String supplierId;
@@ -12,19 +12,19 @@ public class Purchase {
     public Purchase() {
     }
 
-    public Purchase(String sockId, Double purchasePrice, Integer quantity, String supplierId) {
-        this.sockId = sockId;
+    public Purchase(String sock_id, Double purchasePrice, Integer quantity, String supplierId) {
+        this.sock_id = sock_id;
         this.purchasePrice = purchasePrice;
         this.quantity = quantity;
         this.supplierId = supplierId;
     }
 
     public String getSockId() {
-        return sockId;
+        return sock_id;
     }
 
-    public void setSockId(String sockId) {
-        this.sockId = sockId;
+    public void setSockId(String sock_id) {
+        this.sock_id = sock_id;
     }
 
     public Double getPurchasePrice() {
@@ -62,7 +62,7 @@ public class Purchase {
     @Override
     public String toString() {
         return "Purchase{" +
-                "sockId='" + sockId + '\'' +
+                "sock_id='" + sock_id + '\'' +
                 ", purchasePrice=" + purchasePrice +
                 ", quantity=" + quantity +
                 ", supplierId='" + supplierId + '\'' +

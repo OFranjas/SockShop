@@ -1,6 +1,7 @@
 package App.customers;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.Callback;
@@ -72,12 +73,13 @@ public class Customers {
         try {
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
-                records.forEach(record -> {
-                    JSONObject dbInfoData = new JSONObject(record.value());
-                    if (dbInfoData.has("sockId")) {
-                        sendSaleData(generateSaleData(dbInfoData));
+                for (ConsumerRecord<String, String> record : records) {
+                    JSONObject recordJson = new JSONObject(record.value());
+                    if (recordJson.has("payload")) {
+                        JSONObject payload = recordJson.getJSONObject("payload");
+                        sendSaleData(generateSaleData(payload));
                     }
-                });
+                }
             }
         } catch (WakeupException e) {
             logger.info("Consumer closing - WakeupException");
@@ -91,7 +93,16 @@ public class Customers {
     }
 
     private void sendSaleData(final String saleData) {
+        /// print the sale data
+        // System.out.println("\n\n\nSale data: " + saleData + "\n\n\n");
+
         JSONObject saleJson = new JSONObject(saleData);
+
+        // print the sale json
+
+        // System.out.println("\n\n\nSale json: " + saleJson.toString() + "\n\n\n");
+
+        // Extracting sock_id from saleJson
         String sockIdKey = saleJson.getString("sockId");
 
         ProducerRecord<String, String> saleRecord = new ProducerRecord<>(salesTopicName, sockIdKey, saleData);
@@ -102,17 +113,23 @@ public class Customers {
                 logger.info("Sent message: {}", saleData);
             }
         });
+
     }
 
-    private String generateSaleData(JSONObject sockInfo) {
+    private String generateSaleData(JSONObject payload) {
+
+        // PRINT PAYLOAD
+
+        System.out.println("\n\n\nPayload: " + payload.toString() + "\n\n\n");
+
         // Create a new Sale object
         Sale sale = new Sale();
-        sale.setSockId(sockInfo.getString("sockId"));
-        sale.setPricePerPair(sockInfo.getDouble("price"));
-        sale.setNumPairs(1 + random.nextInt(5));
-        sale.setSupplierId(sockInfo.getString("supplierId"));
+        sale.setSockId(payload.optString("sock_id", "")); // Use optString for potential null values
+        sale.setPricePerPair(payload.optDouble("price", 0.0)); // Use optDouble for potential null values
+        sale.setNumPairs(1 + random.nextInt(5)); // Use optInt with default value
+        sale.setSupplierId(payload.optString("supplierid", ""));
         sale.setBuyerId("buyer" + random.nextInt(100));
-        sale.setType(sockInfo.getString("type")); // Set type based on sockInfo
+        sale.setType(payload.optString("type", ""));
 
         // Serialize the Sale object to a JSON string
         return new JSONObject(sale).toString();

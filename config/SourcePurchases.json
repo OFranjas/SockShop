@@ -1,0 +1,17 @@
+{
+    "name": "connect-jdbc-source-purchases",
+    "config": {
+        "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+        "connection.url": "jdbc:postgresql://database:5432/project3",
+        "connection.user": "postgres",
+        "connection.password": "nopass",
+        "dialect.name": "PostgreSqlDatabaseDialect",
+        "mode": "bulk",
+        "query": "SELECT * FROM purchases;",
+        "poll.interval.ms": "30000",
+        "topic.prefix": "DBInfo_topic"
+    }
+}
+
+//read from DBinfo_topic using consumer
+kafka_2.13-3.6.0/bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic DBInfo_topic --from-beginning

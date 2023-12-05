@@ -1,7 +1,7 @@
 package App.models;
 
 public class Sock {
-    private String sockId;
+    private String sock_id;
     private String type; // Example values: "invisible", "low cut", "over the calf"
     private Double price;
     private String supplierId;
@@ -11,19 +11,19 @@ public class Sock {
     public Sock() {
     }
 
-    public Sock(String sockId, String type, Double price, String supplierId) {
-        this.sockId = sockId;
+    public Sock(String sock_id, String type, Double price, String supplierId) {
+        this.sock_id = sock_id;
         this.type = type;
         this.price = price;
         this.supplierId = supplierId;
     }
 
     public String getSockId() {
-        return sockId;
+        return sock_id;
     }
 
-    public void setSockId(String sockId) {
-        this.sockId = sockId;
+    public void setSockId(String sock_id) {
+        this.sock_id = sock_id;
     }
 
     public String getType() {
@@ -53,7 +53,7 @@ public class Sock {
     @Override
     public String toString() {
         return "Sock{" +
-                "sockId='" + sockId + '\'' +
+                "sock_id='" + sock_id + '\'' +
                 ", type='" + type + '\'' +
                 ", price=" + price +
                 ", supplierId='" + supplierId + '\'' +

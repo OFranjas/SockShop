@@ -2,6 +2,7 @@ package App.purchases;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -72,13 +73,13 @@ public class Purchases {
         try {
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
-                records.forEach(record -> {
-                    JSONObject dbInfoData = new JSONObject(record.value());
-                    if (dbInfoData.has("sockId")) {
-                        final String purchaseData = generatePurchaseData(dbInfoData);
-                        sendPurchaseData(purchaseData);
+                for (ConsumerRecord<String, String> record : records) {
+                    JSONObject recordJson = new JSONObject(record.value());
+                    if (recordJson.has("payload")) {
+                        JSONObject payload = recordJson.getJSONObject("payload");
+                        sendPurchaseData(generatePurchaseData(payload));
                     }
-                });
+                }
             }
         } catch (WakeupException e) {
             logger.info("Consumidor sendo fechado - WakeupException");
@@ -92,7 +93,14 @@ public class Purchases {
     }
 
     private void sendPurchaseData(final String purchaseData) {
+
         JSONObject purchaseJson = new JSONObject(purchaseData);
+
+        //print the purchase data
+
+        System.out.println("\n\n\nPurchase Data: " + purchaseData+"\n\n\n");
+
+
         String sockIdKey = purchaseJson.getString("sockId");
 
         ProducerRecord<String, String> purchaseRecord = new ProducerRecord<>(purchasesTopicName, sockIdKey,
@@ -106,14 +114,14 @@ public class Purchases {
         });
     }
 
-    private String generatePurchaseData(JSONObject sockInfo) {
+    private String generatePurchaseData(JSONObject payload) {
         // Create a new Purchase object
         Purchase purchase = new Purchase();
-        purchase.setSockId(sockInfo.getString("sockId"));
-        purchase.setPurchasePrice(sockInfo.getDouble("price"));
-        purchase.setQuantity(1 + random.nextInt(5)); // Random number of pairs
-        purchase.setSupplierId(sockInfo.getString("supplierId"));
-        purchase.setType(sockInfo.getString("type")); // Assuming 'type' is also part of your sockInfo
+        purchase.setSockId(payload.optString("sock_id",""));
+        purchase.setPurchasePrice(payload.optDouble("purchaseprice",0.0));
+        purchase.setQuantity(payload.optInt("quantity",0));
+        purchase.setSupplierId(payload.optString("supplierid",""));
+        purchase.setType(payload.optString("type",""));
 
         // Serialize the Purchase object to a JSON string
         return new JSONObject(purchase).toString();

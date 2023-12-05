@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import App.models.Sock;
 import App.models.Supplier;
 
+import App.config.Config;
+
 /**
  * This class simulates a data generator that sends mock data to the DBInfo
  * Kafka topic.
@@ -22,7 +24,7 @@ import App.models.Supplier;
 public class DBInfoDataGenerator {
 
     private KafkaProducer<String, String> producer;
-    private String topicName = "DBInfo_topic";
+    private String topicName = Config.DB_INFO_TOPIC;
     private Random random = new Random();
     private static final Logger logger = LoggerFactory.getLogger(DBInfoDataGenerator.class);
 

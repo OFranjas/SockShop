@@ -7,6 +7,8 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.common.serialization.Serdes;
 import java.util.Properties;
 
+import App.config.Config;
+
 import App.kafka_streams.processors.*;
 
 public class KafkaStreamsApp {
@@ -15,18 +17,18 @@ public class KafkaStreamsApp {
 
         // Properties and StreamsBuilder setup
         Properties props = new Properties();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "KafkaStreams");
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092,localhost:9093,localhost:9094");
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, Config.APPLICATION_ID);
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Config.KAFKA_BROKER);
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
         final StreamsBuilder builder = new StreamsBuilder();
 
         // Create a stream from the sales_topic
-        KStream<String, String> salesStream = builder.stream("sales_topic");
+        KStream<String, String> salesStream = builder.stream(Config.SALES_TOPIC);
 
         // Create a stream from the purchases_topic
-        KStream<String, String> purchasesStream = builder.stream("purchases_topic");
+        KStream<String, String> purchasesStream = builder.stream(Config.PURCHASES_TOPIC);
 
         // * REQ 5 -> revenue per sale processor
         KafkaStreamProcessor revenuePerSaleProcessor = new RevenuePerSaleProcessor();
@@ -48,7 +50,7 @@ public class KafkaStreamsApp {
         KafkaStreamProcessor totalExpensesProcessor = new TotalExpensesProcessor();
         // totalExpensesProcessor.process(null, purchasesStream);
 
-        // * REQ 10 -> Total profit processor
+        // ! REQ 10 -> Total profit processor
         KafkaStreamProcessor totalProfitProcessor = new TotalProfitProcessor();
         // totalProfitProcessor.process(salesStream, purchasesStream);
 
@@ -62,7 +64,15 @@ public class KafkaStreamsApp {
 
         // * REQ 13 -> Highest profit sock type processor
         KafkaStreamProcessor highestProfitSockTypeProcessor = new HighestProfitSockTypeProcessor();
-        highestProfitSockTypeProcessor.process(salesStream, purchasesStream);
+        // highestProfitSockTypeProcessor.process(salesStream, purchasesStream);
+
+        // ! REQ 14 -> Hourly revenue processor
+        KafkaStreamProcessor hourlyRevenueProcessor = new HourlyRevenueProcessor();
+        // hourlyRevenueProcessor.process(salesStream, purchasesStream);
+
+        // ! REQ 15 -> Hourly expenses processor
+        KafkaStreamProcessor hourlyExpensesProcessor = new HourlyExpensesProcessor();
+        // hourlyExpensesProcessor.process(salesStream, purchasesStream);
 
         // Build and start the Kafka Streams application
         final KafkaStreams streams = new KafkaStreams(builder.build(), props);

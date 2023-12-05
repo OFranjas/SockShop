@@ -23,12 +23,14 @@ import org.slf4j.LoggerFactory;
 
 import App.models.Purchase;
 
+import App.config.Config;
+
 public class Purchases {
 
     private KafkaProducer<String, String> producer;
     private KafkaConsumer<String, String> consumer;
-    private final String purchasesTopicName = "purchases_topic";
-    private final String dbInfoTopicName = "DBInfo_topic";
+    private final String purchasesTopicName = Config.PURCHASES_TOPIC;
+    private final String dbInfoTopicName = Config.DB_INFO_TOPIC;
     private final Random random = new Random();
     private static final Logger logger = LoggerFactory.getLogger(Purchases.class);
 

@@ -16,17 +16,23 @@ public class ProfitPerSaleProcessor implements KafkaStreamProcessor {
 
     @Override
     public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
+
+        // Create a KTable from the sales stream
+        KTable<String, String> salesTable = salesStream.toTable();
+
         // Create a KTable from the purchases stream
         KTable<String, String> expensesTable = purchasesStream.toTable();
 
-        // Join the sales stream with the expenses KTable
+        // Join the sales stream with the expenses KTable, calculating the profit per
+        // each sale
         KStream<String, String> profitPerSaleStream = salesStream.join(
                 expensesTable,
                 (saleValue, expenseValue) -> calculateProfit(saleValue, expenseValue));
 
         // Log and send the result
-        profitPerSaleStream.peek(
-                (key, value) -> logger.info("✅ REQ 7 -> Calculated Profit for Sale (Sale ID: {}): {}", key, value))
+        profitPerSaleStream
+                .peek((key, value) -> logger.info("✅ REQ 7 -> Calculated Profit for Sale (Sale ID: {}): {}", key,
+                        value))
                 .to("results_topic");
     }
 

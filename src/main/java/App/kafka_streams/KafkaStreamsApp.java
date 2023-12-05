@@ -16,7 +16,7 @@ public class KafkaStreamsApp {
         // Properties and StreamsBuilder setup
         Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "KafkaStreams");
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092,localhost:9093,localhost:9094");
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
@@ -54,11 +54,15 @@ public class KafkaStreamsApp {
 
         // * REQ 11 -> Average spent per purchase type processor
         KafkaStreamProcessor averageSpentPerPurchaseByTypeProcessor = new AverageSpentPerPurchaseByTypeProcessor();
-        averageSpentPerPurchaseByTypeProcessor.process(salesStream, purchasesStream);
+        // averageSpentPerPurchaseByTypeProcessor.process(salesStream, purchasesStream);
 
         // * REQ 12 -> Average amount spent per purchase processor
         KafkaStreamProcessor averageSpentPerPurchaseProcessor = new AverageSpentPerPurchaseProcessor();
         // averageSpentPerPurchaseProcessor.process(salesStream, purchasesStream);
+
+        // * REQ 13 -> Highest profit sock type processor
+        KafkaStreamProcessor highestProfitSockTypeProcessor = new HighestProfitSockTypeProcessor();
+        highestProfitSockTypeProcessor.process(salesStream, purchasesStream);
 
         // Build and start the Kafka Streams application
         final KafkaStreams streams = new KafkaStreams(builder.build(), props);

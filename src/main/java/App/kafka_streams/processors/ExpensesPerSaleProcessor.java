@@ -7,35 +7,48 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import App.config.Config;
+
 /**
- * Processor for calculating the expenses per sock pair sale.
+ * The ExpensesPerSaleProcessor class implements the KafkaStreamProcessor
+ * interface.
+ * It processes a stream of purchases data and calculates the expenses for each
+ * purchase.
+ * The calculated expenses are then sent to another Kafka topic.
  */
 public class ExpensesPerSaleProcessor implements KafkaStreamProcessor {
 
+    // Logger for logging information and calculated expenses
     private static final Logger logger = LoggerFactory.getLogger(ExpensesPerSaleProcessor.class);
 
     /**
-     * Processes the purchases data from the purchases_topic to calculate the
-     * expenses per purchase.
-     * 
-     * @param salesStream The stream of sales data.
-     * @param purchasesStream The stream of purchases data.
+     * The process method takes in a stream of sales data and a stream of purchases
+     * data.
+     * It calculates the expenses for each purchase by multiplying the purchase
+     * price with the quantity.
+     * The calculated expenses are logged and sent to the "results_topic" Kafka
+     * topic.
+     *
+     * @param salesStream     A stream of sales data.
+     * @param purchasesStream A stream of purchases data.
      */
     @Override
     public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
 
-        // Map each purchase record to calculate expenses
-        KStream<String, String> expensesPerSaleStream = purchasesStream.mapValues((ValueMapper<String, String>) value -> {
-            JSONObject purchase = new JSONObject(value);
-            double purchasePrice = purchase.getDouble("purchasePrice");
-            int quantity = purchase.getInt("quantity");
-            return String.valueOf(purchasePrice * quantity);
-        });
+        // Transform the purchases stream to calculate the expenses for each purchase
+        KStream<String, String> expensesPerSaleStream = purchasesStream
+                .mapValues((ValueMapper<String, String>) value -> {
+                    JSONObject purchase = new JSONObject(value);
+                    double purchasePrice = purchase.getDouble("purchasePrice");
+                    int quantity = purchase.getInt("quantity");
+                    return String.valueOf(purchasePrice * quantity); // Calculate expenses
+                });
 
-        // Log each calculated expense
-        expensesPerSaleStream.foreach((key, value) -> logger.info("✅ REQ 6 -> Calculated Expense for purchase (Purchase ID: {}): {}", key, value));
+        // Log the calculated expenses for each purchase
+        expensesPerSaleStream.foreach((key, value) -> logger
+                .info("✅ REQ 6 -> Calculated Expense for purchase (Purchase ID: {}): {}", key, value));
 
-        // Send the calculated expenses to the results_topic
-        expensesPerSaleStream.to("results_topic");
+        // Send the expenses stream to the "results_topic" Kafka topic
+        expensesPerSaleStream.to(Config.RESULTS_TOPIC);
     }
 }

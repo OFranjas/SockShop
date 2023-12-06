@@ -12,47 +12,68 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import App.config.Config;
+
+/**
+ * The AverageSpentPerPurchaseProcessor class implements the
+ * KafkaStreamProcessor
+ * interface. It processes a stream of purchases data and calculates the average
+ * amount spent per purchase. The calculated average is then sent to another
+ * Kafka topic.
+ */
 public class AverageSpentPerPurchaseProcessor implements KafkaStreamProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AverageSpentPerPurchaseProcessor.class);
+        private static final Logger logger = LoggerFactory.getLogger(AverageSpentPerPurchaseProcessor.class);
 
-    @Override
-    public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
-        // Convert purchase data to expense values
-        KStream<String, Double> expensesStream = purchasesStream.mapValues(value -> {
-            JSONObject purchase = new JSONObject(value);
-            double purchasePrice = purchase.getDouble("purchasePrice");
-            int quantity = purchase.getInt("quantity");
-            return purchasePrice * quantity;
-        });
+        /**
+         * The process method takes in a stream of purchases data. It calculates the
+         * average
+         * amount spent per purchase by summing up the expenses for each purchase and
+         * dividing
+         * by the number of purchases. The calculated average is logged and sent to the
+         * "results_topic" Kafka topic.
+         *
+         * @param salesStream     A stream of sales data (not used in this processor).
+         * @param purchasesStream A stream of purchases data.
+         */
+        @Override
+        public void process(KStream<String, String> salesStream, KStream<String, String> purchasesStream) {
 
-        // Group the expense stream by a constant key to aggregate across all records
-        KGroupedStream<String, Double> groupedExpenses = expensesStream.groupBy(
-                (key, value) -> "total",
-                Grouped.with(Serdes.String(), Serdes.Double()));
+                // Convert purchase data to expense values
+                KStream<String, Double> expensesStream = purchasesStream.mapValues(value -> {
+                        JSONObject purchase = new JSONObject(value);
+                        double purchasePrice = purchase.getDouble("purchasePrice");
+                        int quantity = purchase.getInt("quantity");
+                        return purchasePrice * quantity;
+                });
 
-        // Aggregate the expenses to calculate the total expenses
-        KTable<String, Double> totalExpensesTable = groupedExpenses
-                .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()));
+                // Group the expense stream by a constant key to aggregate across all records
+                KGroupedStream<String, Double> groupedExpenses = expensesStream.groupBy(
+                                (key, value) -> "total",
+                                Grouped.with(Serdes.String(), Serdes.Double()));
 
-        // Count the number of purchases
-        KTable<String, Long> countTable = purchasesStream.groupBy(
-                (key, value) -> "total",
-                Grouped.with(Serdes.String(), Serdes.String()))
-                .count(Materialized.with(Serdes.String(), Serdes.Long()));
+                // Aggregate the expenses to calculate the total expenses
+                KTable<String, Double> totalExpensesTable = groupedExpenses
+                                .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()));
 
-        // Join the two tables to calculate the average
-        KTable<String, Double> averageTable = totalExpensesTable.join(
-                countTable,
-                (totalExpenses, count) -> count == 0 ? 0.0 : totalExpenses / count);
+                // Count the number of purchases
+                KTable<String, Long> countTable = purchasesStream.groupBy(
+                                (key, value) -> "total",
+                                Grouped.with(Serdes.String(), Serdes.String()))
+                                .count(Materialized.with(Serdes.String(), Serdes.Long()));
 
-        // Extract the resulting average as a KStream
-        KStream<String, Double> averageStream = averageTable.toStream();
+                // Join the two tables to calculate the average
+                KTable<String, Double> averageTable = totalExpensesTable.join(
+                                countTable,
+                                (totalExpenses, count) -> count == 0 ? 0.0 : totalExpenses / count);
 
-        // Use peek for logging
-        averageStream.peek((key, avgExpense) -> logger.info("✅ REQ 12 -> Average Expense: {}", avgExpense));
+                // Extract the resulting average as a KStream
+                KStream<String, Double> averageStream = averageTable.toStream();
 
-        // Send the result to a topic
-        averageStream.to("results_topic", Produced.with(Serdes.String(), Serdes.Double()));
-    }
+                // Use peek for logging
+                averageStream.peek((key, avgExpense) -> logger.info("✅ REQ 12 -> Average Expense: {}", avgExpense));
+
+                // Send the result to a topic
+                averageStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.Double()));
+        }
 }

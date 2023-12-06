@@ -50,7 +50,7 @@ public class KafkaStreamsApp {
         KafkaStreamProcessor totalExpensesProcessor = new TotalExpensesProcessor();
         // totalExpensesProcessor.process(null, purchasesStream);
 
-        // ! REQ 10 -> Total profit processor
+        // * REQ 10 -> Total profit processor
         KafkaStreamProcessor totalProfitProcessor = new TotalProfitProcessor();
         // totalProfitProcessor.process(salesStream, purchasesStream);
 
@@ -66,13 +66,17 @@ public class KafkaStreamsApp {
         KafkaStreamProcessor highestProfitSockTypeProcessor = new HighestProfitSockTypeProcessor();
         // highestProfitSockTypeProcessor.process(salesStream, purchasesStream);
 
-        // ! REQ 14 -> Hourly revenue processor
+        // * REQ 14 -> Hourly revenue processor
         KafkaStreamProcessor hourlyRevenueProcessor = new HourlyRevenueProcessor();
         // hourlyRevenueProcessor.process(salesStream, purchasesStream);
 
-        // ! REQ 15 -> Hourly expenses processor
+        // * REQ 15 -> Hourly expenses processor
         KafkaStreamProcessor hourlyExpensesProcessor = new HourlyExpensesProcessor();
         // hourlyExpensesProcessor.process(salesStream, purchasesStream);
+
+        // * REQ 16 -> Hourly profit processor
+        KafkaStreamProcessor hourlyProfitProcessor = new HourlyProfitProcessor();
+        hourlyProfitProcessor.process(salesStream, purchasesStream);
 
         // Build and start the Kafka Streams application
         final KafkaStreams streams = new KafkaStreams(builder.build(), props);

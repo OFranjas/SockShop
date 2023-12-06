@@ -30,3 +30,24 @@ This project is developed collaboratively by Gonçalo Ferreira and Rafael Ferrei
 
 ### License
 This project is licensed under the [MIT License](LICENSE).
+
+## Source.json
+
+### post connector to kafka connect 
+
+curl -X POST -H "Content-Type: application/json" --data @SockShop/config/sourceSocks.json http://localhost:8083/connectors ; curl -X POST -H "Content-Type: application/json" --data @SockShop/config/SourcePurchases.json http://localhost:8083/connectors 
+
+
+
+curl -X DELETE http://localhost:8083/connectors/connect-jdbc-source-purchases ; curl -X DELETE http://localhost:8083/connectors/connect-jdbc-source-socks
+
+
+
+
+### read from DBinfo_topic using consumer
+
+kafka_2.13-3.6.0/bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic DBInfo_topic --from-beginning
+
+### steps que me lembro
+
+Adicionar os 2 ficheiros que o gameiro deu no lib do kafka

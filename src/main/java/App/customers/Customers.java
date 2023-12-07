@@ -64,7 +64,7 @@ public class Customers {
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "customer-group");
-        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singletonList(dbInfoTopicName));
         logger.info("Kafka consumer initialized and subscribed to {}", dbInfoTopicName);
@@ -125,8 +125,9 @@ public class Customers {
 
         // Create a new Sale object
         Sale sale = new Sale();
-        sale.setSockId(payload.optString("sock_id", "")); // Use optString for potential null values
-        sale.setPricePerPair(payload.optDouble("price", 0.0)); // Use optDouble for potential null values
+        sale.setSockId(payload.optString("sockid")); // Use optString for potential null values
+        sale.setPricePerPair(payload.optDouble("price", 0.0) + random.nextDouble() * 10); // Use optDouble for potential
+                                                                                          // null values
         sale.setNumPairs(1 + random.nextInt(5)); // Use optInt with default value
         sale.setSupplierId(payload.optString("supplierid", ""));
         sale.setBuyerId("buyer" + random.nextInt(100));

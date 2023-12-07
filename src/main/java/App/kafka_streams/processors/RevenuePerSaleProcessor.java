@@ -45,9 +45,19 @@ public class RevenuePerSaleProcessor implements KafkaStreamProcessor {
 
         // Log the calculated revenue for each sale
         revenuePerSaleStream.foreach((key, revenue) -> logger
-                .info("✅ REQ 5 -> Calculated Revenue for sale (Sale ID: {}): {}", key, revenue));
+                .info("✅ REQ 5 -> Calculated Revenue for sale (Sock ID: {}): {}", key, String.format("%.2f", revenue)));
 
-        // Send the revenue stream to the "results_topic" Kafka topic
-        revenuePerSaleStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.Double()));
+        KStream<String, String> formattedRevenuePerSaleStream = revenuePerSaleStream.mapValues(revenue -> {
+            // Format revenue to have only two decimal places
+            String formattedRevenue = String.format("%.2f", revenue);
+
+            JSONObject json = new JSONObject();
+            json.put("requirement_id", 5); // This is for requirement 5
+            json.put("result", formattedRevenue);
+            return json.toString();
+        });
+
+        // Send the formatted revenue stream to the "results_topic" Kafka topic
+        formattedRevenuePerSaleStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.String()));
     }
 }

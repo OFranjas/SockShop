@@ -65,7 +65,7 @@ public class Purchases {
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "purchase-group");
-        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singletonList(dbInfoTopicName));
         logger.info("Consumidor Kafka inicializado e inscrito no tópico {}", dbInfoTopicName);
@@ -98,10 +98,9 @@ public class Purchases {
 
         JSONObject purchaseJson = new JSONObject(purchaseData);
 
-        //print the purchase data
+        // print the purchase data
 
-        System.out.println("\n\n\nPurchase Data: " + purchaseData+"\n\n\n");
-
+        System.out.println("\n\n\nPurchase Data: " + purchaseData + "\n\n\n");
 
         String sockIdKey = purchaseJson.getString("sockId");
 
@@ -119,11 +118,12 @@ public class Purchases {
     private String generatePurchaseData(JSONObject payload) {
         // Create a new Purchase object
         Purchase purchase = new Purchase();
-        purchase.setSockId(payload.optString("sock_id",""));
-        purchase.setPurchasePrice(payload.optDouble("purchaseprice",0.0));
-        purchase.setQuantity(payload.optInt("quantity",0));
-        purchase.setSupplierId(payload.optString("supplierid",""));
-        purchase.setType(payload.optString("type",""));
+        purchase.setSockId(payload.optString("sockid", ""));
+        purchase.setPurchasePrice(payload.optDouble("price", 0.0));
+        // Random quantity between 1 and 10
+        purchase.setQuantity(random.nextInt(10) + 1);
+        purchase.setSupplierId(payload.optString("supplierid", ""));
+        purchase.setType(payload.optString("type", ""));
 
         // Serialize the Purchase object to a JSON string
         return new JSONObject(purchase).toString();

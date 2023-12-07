@@ -1,5 +1,5 @@
 {
-    "name": "connect-jdbc-source-purchases",
+    "name": "connect-jdbc-source-socks",
     "config": {
         "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
         "connection.url": "jdbc:postgresql://database:5432/project3",
@@ -7,11 +7,12 @@
         "connection.password": "nopass",
         "dialect.name": "PostgreSqlDatabaseDialect",
         "mode": "bulk",
-        "query": "SELECT * FROM purchases;",
-        "poll.interval.ms": "30000",
-        "topic.prefix": "DBInfo_topic"
+        "query": "SELECT * FROM socks;",
+        "poll.interval.ms": "10000",
+        "topic.prefix": "DBInfo"
     }
 }
 
-//read from DBinfo_topic using consumer
-kafka_2.13-3.6.0/bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic DBInfo_topic --from-beginning
+// Read from topic DBInfo terminal
+kafka-console-consumer --bootstrap-server kafka:9092 --topic DBInforequirements --from-beginning
+```

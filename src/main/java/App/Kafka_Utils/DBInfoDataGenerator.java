@@ -45,6 +45,7 @@ public class DBInfoDataGenerator {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         producer = new KafkaProducer<>(props);
+        
         logger.info("Kafka producer for DBInfo topic initialized");
     }
 

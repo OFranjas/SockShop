@@ -5,6 +5,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,8 +48,22 @@ public class TotalRevenueProcessor implements KafkaStreamProcessor {
                 Grouped.with(Serdes.String(), Serdes.Double()))
                 // Aggregate the revenues to calculate the total revenue
                 .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()))
-                .toStream()
-                .peek((key, totalRevenue) -> logger.info("✅ REQ 8 -> Total Revenue: {}", totalRevenue))
-                .to(Config.RESULTS_TOPIC);
+                .toStream();
+
+        // Log the calculated total revenue
+        revenueStream.foreach((key, totalRevenue) -> logger.info("✅ REQ 8 -> Total Revenue: {}", totalRevenue));
+
+        KStream<String, String> formattedTotalRevenueStream = revenueStream.mapValues(totalRevenue -> {
+            // Format total revenue to have only two decimal places
+            String formattedTotalRevenue = String.format("%.2f", totalRevenue);
+
+            JSONObject json = new JSONObject();
+            json.put("requirement_id", 8); // This is for requirement 8
+            json.put("result", formattedTotalRevenue);
+            return json.toString();
+        });
+
+        // Send the formatted total revenue stream to the "results_topic" Kafka topic
+        formattedTotalRevenueStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.String()));
     }
 }

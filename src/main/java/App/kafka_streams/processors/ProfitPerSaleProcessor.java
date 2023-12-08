@@ -5,6 +5,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.ValueJoiner;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -54,11 +55,20 @@ public class ProfitPerSaleProcessor implements KafkaStreamProcessor {
                 profitJoiner,
                 Joined.with(Serdes.String(), Serdes.String(), Serdes.String()));
 
-        // Log the calculated profit for each sale and send it to the "results_topic"
-        profitPerSaleStream
-                .peek((key, value) -> logger.info("✅ REQ 7 -> Calculated Profit for Sale (Sale ID: {}): {}", key,
-                        value))
-                .to(Config.RESULTS_TOPIC);
+        // Log the calculated profit for each sale, format it and send it to the "results_topic"
+        profitPerSaleStream.foreach((key, value) -> logger
+                .info("✅ REQ 7 -> Calculated Profit for Sale (Sale ID: {}): {}", key, value));
+
+        KStream<String, String> formattedProfitPerSaleStream = profitPerSaleStream.mapValues(profit -> {
+            String formattedProfit = String.format("%.2f", Double.parseDouble(profit));
+
+            JSONObject json = new JSONObject();
+            json.put("requirement_id", 7); // This is for requirement 7
+            json.put("result", formattedProfit);
+            return json.toString();
+        });
+
+        formattedProfitPerSaleStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.String()));
     }
 
     /**

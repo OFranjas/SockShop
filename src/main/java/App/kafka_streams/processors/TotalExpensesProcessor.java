@@ -5,6 +5,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,8 +48,22 @@ public class TotalExpensesProcessor implements KafkaStreamProcessor {
                 Grouped.with(Serdes.String(), Serdes.Double()))
                 // Aggregate the expenses to calculate the total expenses
                 .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()))
-                .toStream()
-                .peek((key, totalExpenses) -> logger.info("✅ REQ 9 -> Total Expenses: {}", totalExpenses))
-                .to(Config.RESULTS_TOPIC);
+                .toStream();
+
+        // Log the calculated total expenses
+        expensesStream.foreach((key, totalExpenses) -> logger.info("✅ REQ 9 -> Total Expenses: {}", totalExpenses));
+
+        KStream<String, String> formattedTotalExpensesStream = expensesStream.mapValues(totalExpenses -> {
+            // Format total expenses to have only two decimal places
+            String formattedTotalExpenses = String.format("%.2f", totalExpenses);
+
+            JSONObject json = new JSONObject();
+            json.put("requirement_id", 9); // This is for requirement 9
+            json.put("result", formattedTotalExpenses);
+            return json.toString();
+        });
+
+        // Send the formatted total expenses stream to the "results_topic" Kafka topic
+        formattedTotalExpensesStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.String()));
     }
 }

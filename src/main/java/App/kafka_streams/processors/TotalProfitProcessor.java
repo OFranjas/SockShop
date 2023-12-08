@@ -8,6 +8,7 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,12 +64,27 @@ public class TotalProfitProcessor implements KafkaStreamProcessor {
                                 (key, value) -> "total",
                                 Grouped.with(Serdes.String(), Serdes.Double()));
 
-                // Aggregate the profits to calculate the total profit
-                groupedProfit
+                // Log the calculated total profit
+                groupedProfit.reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()))
+                                .toStream()
+                                .foreach((key, totalProfit) -> logger.info("✅ REQ 10 -> Total Profit: {}",
+                                                totalProfit));
+
+                KStream<String, String> formattedTotalProfitStream = groupedProfit
                                 .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()))
                                 .toStream()
-                                .peek((key, totalProfit) -> logger.info("✅ REQ 10 -> Total Profit: {}", totalProfit))
-                                .to(Config.RESULTS_TOPIC);
+                                .mapValues(totalProfit -> {
+                                        // Format total profit to have only two decimal places
+                                        String formattedTotalProfit = String.format("%.2f", totalProfit);
+
+                                        JSONObject json = new JSONObject();
+                                        json.put("requirement_id", 10); // This is for requirement 10
+                                        json.put("result", formattedTotalProfit);
+                                        return json.toString();
+                                });
+
+                // Send the formatted total profit stream to the "results_topic" Kafka topic
+                formattedTotalProfitStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.String()));
         }
 
         /**

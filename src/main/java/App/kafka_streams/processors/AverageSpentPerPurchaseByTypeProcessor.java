@@ -63,7 +63,22 @@ public class AverageSpentPerPurchaseByTypeProcessor implements KafkaStreamProces
                 averageExpensesTable.toStream()
                                 .mapValues(avg -> avg.getTotal() / avg.getCount())
                                 .peek((type, avgExpense) -> logger.info("✅ REQ 11 -> Average Expense for Type {}: {}",
-                                                type, avgExpense))
-                                .to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.Double()));
+                                                type, avgExpense));
+
+                KStream<String, String> formattedAverageExpensesStream = averageExpensesTable.toStream()
+                                .mapValues(avg -> avg.getTotal() / avg.getCount())
+                                .mapValues(avgExpense -> {
+                                        // Format average expense to have only two decimal places
+                                        String formattedAvgExpense = String.format("%.2f", avgExpense);
+
+                                        JSONObject json = new JSONObject();
+                                        json.put("requirement_id", 11); // This is for requirement 11
+                                        json.put("result", formattedAvgExpense);
+                                        return json.toString();
+                                });
+
+                // Send the formatted average expense stream to the "results_topic" Kafka topic
+                formattedAverageExpensesStream.to(Config.RESULTS_TOPIC,
+                                Produced.with(Serdes.String(), Serdes.String()));
         }
 }

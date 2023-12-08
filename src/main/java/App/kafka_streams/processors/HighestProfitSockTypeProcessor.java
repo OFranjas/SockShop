@@ -96,11 +96,21 @@ public class HighestProfitSockTypeProcessor implements KafkaStreamProcessor {
                                                 // Subtractor (not used in this case, but required for method signature)
                                                 (aggValue, oldValue) -> aggValue);
 
-                // Log the type with the highest profit and send it to the results topic
+                // Log the type with the highest profit
                 maxProfitType.toStream()
-                                .peek((key, value) -> logger.info(
+                                .mapValues(value -> value)
+                                .foreach((key, value) -> logger.info(
                                                 "✅ REQ 13 -> Type with Highest Profit: {} | Profit: {}",
-                                                value.getType(), value.getProfit()))
-                                .to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), new ProfitTypePairSerde()));
+                                                value.getType(), value.getProfit()));
+
+                // Send the type with the highest profit to the results topic
+                maxProfitType.toStream()
+                                .mapValues(value -> {
+                                        JSONObject json = new JSONObject();
+                                        json.put("requirement_id", 13); // This is for requirement 13
+                                        json.put("result", value.getType());
+                                        return json.toString();
+                                })
+                                .to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.String()));
         }
 }

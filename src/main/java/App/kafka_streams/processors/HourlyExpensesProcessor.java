@@ -6,7 +6,9 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Windowed;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Grouped;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -55,10 +57,24 @@ public class HourlyExpensesProcessor implements KafkaStreamProcessor {
                 .windowedBy(TimeWindows.ofSizeWithNoGrace(windowSize))
                 .reduce(Double::sum, Materialized.with(Serdes.String(), Serdes.Double()));
 
-        // Aggregate the total expenses for the latest window
+        // Log the calculated total expenses
         windowedExpenses.toStream()
                 .peek((key, totalExpenses) -> logger.info("✅ REQ 15 -> Total Expenses in the last hour: {}",
-                        totalExpenses))
-                .to(Config.RESULTS_TOPIC);
+                        totalExpenses));
+
+        KStream<String, String> formattedTotalExpensesStream = windowedExpenses.toStream()
+                .map((key, totalExpenses) -> new KeyValue<>(key.key(), totalExpenses)) // Extract the original key
+                .mapValues(totalExpenses -> {
+                    // Format total expenses to have only two decimal places
+                    String formattedTotalExpenses = String.format("%.2f", totalExpenses);
+
+                    JSONObject json = new JSONObject();
+                    json.put("requirement_id", 15); // This is for requirement 15
+                    json.put("result", formattedTotalExpenses);
+                    return json.toString();
+                });
+
+        // Send the formatted total expenses stream to the "results_topic" Kafka topic
+        formattedTotalExpensesStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.String()));
     }
 }

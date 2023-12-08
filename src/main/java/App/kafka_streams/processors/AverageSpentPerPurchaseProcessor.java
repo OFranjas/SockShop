@@ -67,13 +67,25 @@ public class AverageSpentPerPurchaseProcessor implements KafkaStreamProcessor {
                                 countTable,
                                 (totalExpenses, count) -> count == 0 ? 0.0 : totalExpenses / count);
 
-                // Extract the resulting average as a KStream
-                KStream<String, Double> averageStream = averageTable.toStream();
+                // Log the calculated average expense per purchase
+                averageTable.toStream()
+                                .mapValues(avgExpense -> avgExpense)
+                                .foreach((key, avgExpense) -> logger.info("✅ REQ 12 -> Average Expense: {}",
+                                                avgExpense));
 
-                // Use peek for logging
-                averageStream.peek((key, avgExpense) -> logger.info("✅ REQ 12 -> Average Expense: {}", avgExpense));
+                KStream<String, String> formattedAverageExpensesStream = averageTable.toStream()
+                                .mapValues(avgExpense -> {
+                                        // Format average expense to have only two decimal places
+                                        String formattedAvgExpense = String.format("%.2f", avgExpense);
 
-                // Send the result to a topic
-                averageStream.to(Config.RESULTS_TOPIC, Produced.with(Serdes.String(), Serdes.Double()));
+                                        JSONObject json = new JSONObject();
+                                        json.put("requirement_id", 12); // This is for requirement 12
+                                        json.put("result", formattedAvgExpense);
+                                        return json.toString();
+                                });
+
+                // Send the formatted average expense stream to the "results_topic" Kafka topic
+                formattedAverageExpensesStream.to(Config.RESULTS_TOPIC,
+                                Produced.with(Serdes.String(), Serdes.String()));
         }
 }
